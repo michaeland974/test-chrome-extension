@@ -1,0 +1,24 @@
+{
+    "name": "testing Spotify OAuth2",
+    "description": "chrome extension for youtube, where songs can be added to spotify playlist",
+    "version": "0.1.0",
+    "manifest_version": 3, 
+    "background": {
+        "service_worker": "/background.js",
+        "type": "module"
+    },
+    "options_page": "./options.html", 
+    "action": {
+        "default_popup": "./popup/views/sign-in.html"
+    },
+    "host_permissions": [
+        "https://www.google.com/*" 
+    ],
+    "permissions": [
+        "tabs",
+        "activeTab",
+        "scripting",
+        "storage",
+        "identity"
+    ]
+}
