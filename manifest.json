@@ -12,7 +12,11 @@
         "default_popup": "./popup/views/sign-in.html"
     },
     "host_permissions": [
-        "https://www.google.com/*" 
+        "https://www.google.com/*", 
+        "https://accounts.spotify.com/*",  
+        "https://accounts.spotify.com/authorize/*",
+        "https://accounts.spotify.com/api/token/*"
+
     ],
     "permissions": [
         "tabs",
