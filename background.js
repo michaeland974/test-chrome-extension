@@ -1,11 +1,11 @@
-import { queryParams } from "./auth.js";
+import {queryParams} from "./auth.js";
 import {generateCodeVerifier, generateCodeChallengeFromVerifier} from "./auth.js"
 
-let user_signed_in = '';
+let userSignedIn = '';
 
-const create_authorize_endpoint = async() => {
-    const code_verifier = generateCodeVerifier();
-    const codeChallenge = await generateCodeChallengeFromVerifier(code_verifier);
+const createAuthorizeEndpoint = async() => {
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallengeFromVerifier(codeVerifier);
     queryParams.state = encodeURIComponent('meet' + Math.random().toString(36).substring(2, 15));
 
     const endpoint =  `https://accounts.spotify.com/authorize?`+
@@ -18,7 +18,7 @@ const create_authorize_endpoint = async() => {
                         `&code_challenge_method=${queryParams.code_challenge_method}`+
                         `&code_challenge=${codeChallenge}`;
         console.log(endpoint);
-        return {endpoint, code_verifier};
+        return {endpoint, codeVerifier};
 }
 
 const getAuthCode = (redirect, {sendResponse}) => {
@@ -32,13 +32,13 @@ const getAuthCode = (redirect, {sendResponse}) => {
               auth_code = auth_str.substring(0, auth_str.indexOf('&'));
 
         if(state === queryParams.state){
-            user_signed_in = true;
+            userSignedIn = true;
             chrome.action.setPopup({ popup: './popup/views/sign-out.html' }, ()=>{
                 sendResponse({ message: 'success' });
             })
         } 
         else {
-            user_signed_in = false;
+            userSignedIn = false;
             sendResponse({ message: 'fail' });
             return;
         }
@@ -46,16 +46,16 @@ const getAuthCode = (redirect, {sendResponse}) => {
     return auth_code;
 }
 
-const getAccessToken = async(auth_code, code_verifier) => {
+const getAccessToken = async(authCode, codeVerifier) => {
     const body = new URLSearchParams({
         'grant_type': queryParams.grant_type,
-        'code': auth_code,
+        'code': authCode,
         'redirect_uri': queryParams.redirect_uri,
-        'code_verifier' : code_verifier,
+        'code_verifier' : codeVerifier,
         'client_id': queryParams.client_id,
         'code_secret': queryParams.client_key,
     })
-    const request_token = await fetch(`https://accounts.spotify.com/api/token`,{
+    const requestToken = await fetch(`https://accounts.spotify.com/api/token`,{
         method: 'POST',
         headers: {
             "Content-Type": 'application/x-www-form-urlencoded',
@@ -63,14 +63,14 @@ const getAccessToken = async(auth_code, code_verifier) => {
         body: body,
         json: true
     })
-    const response = await request_token.json();
+    const response = await requestToken.json();
     return response;    
 }
 
 const authorize = async({sendResponse}) => {
-    const authorizeData = await create_authorize_endpoint();
+    const authorizeData = await createAuthorizeEndpoint();
         const endpoint = authorizeData.endpoint;
-        const codeVerifier = authorizeData.code_verifier;
+        const codeVerifier = authorizeData.codeVerifier;
     
     chrome.identity.launchWebAuthFlow({
         url: endpoint,
@@ -82,11 +82,8 @@ const authorize = async({sendResponse}) => {
                 console.log(Token) 
                 console.log(Token.access_token)
                 const testId = '11dFghVXANMlKmJXsNCbNl'
-                   // const trackInfo = await getTrack(testId, Token.access_token)
                     getTrack(testId, Token.access_token)
-                    //saveTrack(testId, Token.access_token)
-                    searchTrackFirstTrack("Cut To The Feeling", Token.access_token)
-                   // console.log(trackInfo.isrc === searchTrackInfo.isrc)
+                    //searchTrackFirstTrack("Cut To The Feeling", Token.access_token)
     })
 }
 
@@ -98,7 +95,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     else if (request.message === 'logout') {
         (async() => {
-            user_signed_in = false;
+            userSignedIn = false;
             chrome.action.setPopup({ popup: './popup/views/sign-in.html' }, () => {
                 sendResponse({message: 'success' });
             })
@@ -108,10 +105,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 const getTrack = async (id, accessToken) => {
-  /*   const body = new URLSearchParams({
-       // 'grant_type': queryParams.grant_type,
-    }) */
-    const request_track = await fetch(`https://api.spotify.com/v1/tracks/${id}`,{
+    const requestTrack = await fetch(`https://api.spotify.com/v1/tracks/${id}`,{
         method: 'GET',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -119,17 +113,13 @@ const getTrack = async (id, accessToken) => {
         },
         json: true
     })
-    const response = await request_track.json();
-    const isrc = response.external_ids.isrc
+    const response = await requestTrack.json();
     console.log(response)
-    return {response, isrc}; 
+    return response; 
 }
 
 const getPlaylists = async (accessToken) => {
-    /*   const body = new URLSearchParams({
-         // 'grant_type': queryParams.grant_type,
-      }) */
-      const request_playlists = await fetch(`https://api.spotify.com/v1/me/playlists`,{
+      const requestPlaylists = await fetch(`https://api.spotify.com/v1/me/playlists`,{
           method: 'GET',
           headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
@@ -137,15 +127,12 @@ const getPlaylists = async (accessToken) => {
           },
           json: true
       })
-      const response = await request_playlists.json();
+      const response = await requestPlaylists.json();
       console.log(response) 
 }
 
 const getSavedTracks = async (accessToken) => {
-    /*   const body = new URLSearchParams({
-         // 'grant_type': queryParams.grant_type,
-      }) */
-      const request_saved_tracks = await fetch(`https://api.spotify.com/v1/me/tracks/`,{
+      const requestSavedTracks = await fetch(`https://api.spotify.com/v1/me/tracks/`,{
           method: 'GET',
           headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
@@ -153,15 +140,12 @@ const getSavedTracks = async (accessToken) => {
           },
           json: true
       })
-      const response = await request_saved_tracks.json();
+      const response = await requestSavedTracks.json();
       console.log(response) 
 }
 
 const saveTrack = async (id, accessToken) => {
-    /*   const body = new URLSearchParams({
-         // 'grant_type': queryParams.grant_type,
-      }) */
-      const save_track = await fetch(`https://api.spotify.com/v1/me/tracks?ids=${id}`,{
+      const saveTrackRequest = await fetch(`https://api.spotify.com/v1/me/tracks?ids=${id}`,{
           method: 'PUT',
           headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
@@ -169,7 +153,7 @@ const saveTrack = async (id, accessToken) => {
           },
           json: true
       })
-      const response = save_track;
+      const response = saveTrackRequest;
       console.log(response) 
 }
 
@@ -186,7 +170,6 @@ const searchTrackFirstTrack = async(trackName, accessToken) => {
     })
     const response = await search_track.json();
     const firstTrack = response.tracks.items[0];
-        const isrc = firstTrack.external_ids.isrc
     console.log(firstTrack)
-    return {firstTrack, isrc}; 
+    return firstTrack; 
 }
