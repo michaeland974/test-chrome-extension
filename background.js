@@ -82,8 +82,11 @@ const authorize = async({sendResponse}) => {
                 console.log(Token) 
                 console.log(Token.access_token)
                 const testId = '11dFghVXANMlKmJXsNCbNl'
-                    //getTrack(testId, Token.access_token) 
-                    saveTrack(testId, Token.access_token)
+                   // const trackInfo = await getTrack(testId, Token.access_token)
+                    getTrack(testId, Token.access_token)
+                    //saveTrack(testId, Token.access_token)
+                    searchTrackFirstTrack("Cut To The Feeling", Token.access_token)
+                   // console.log(trackInfo.isrc === searchTrackInfo.isrc)
     })
 }
 
@@ -117,7 +120,9 @@ const getTrack = async (id, accessToken) => {
         json: true
     })
     const response = await request_track.json();
-    console.log(response) 
+    const isrc = response.external_ids.isrc
+    console.log(response)
+    return {response, isrc}; 
 }
 
 const getPlaylists = async (accessToken) => {
@@ -166,4 +171,22 @@ const saveTrack = async (id, accessToken) => {
       })
       const response = save_track;
       console.log(response) 
+}
+
+const searchTrackFirstTrack = async(trackName, accessToken) => {
+    const url = `https://api.spotify.com/v1/search?q=track${trackName}&type=track&limit=10`
+    const search_track = await fetch(url,{
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+        },
+        json: true
+    })
+    const response = await search_track.json();
+    const firstTrack = response.tracks.items[0];
+        const isrc = firstTrack.external_ids.isrc
+    console.log(firstTrack)
+    return {firstTrack, isrc}; 
 }
