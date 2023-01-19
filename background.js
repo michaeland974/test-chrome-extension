@@ -1,6 +1,33 @@
 import {queryParams} from "./auth.js";
 import {generateCodeVerifier, generateCodeChallengeFromVerifier} from "./auth.js"
 
+const getTab = async() => {
+    const queryOptions = {active: true, currentWindow: true};
+    const tabs = await chrome.tabs.query(queryOptions);
+    return tabs[0];
+}
+
+const getCurrentTabURL = () => {
+    let currentTabUrl = '';
+    
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+        //preventing multiple fires on youtube.com
+       if(tab.status ==="complete" && tab.url!=currentTabUrl){
+        currentTabUrl = tab.url;
+        console.log(`current url is:${currentTabUrl}`)
+        return;
+       }
+    }) 
+    chrome.tabs.onActivated.addListener(async () => {
+        const tab = await getTab()
+        currentTabUrl = tab.url;
+        console.log(`current url is:${currentTabUrl}`)
+        return;
+    })   
+}
+
+getCurrentTabURL();
+
 let userSignedIn = '';
 
 const createAuthorizeEndpoint = async() => {
@@ -89,8 +116,7 @@ const authorize = async({sendResponse}) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if(request.message === 'login') {
-        authorize({sendResponse})
-            
+        authorize({sendResponse})   
         return true;  
     }
     else if (request.message === 'logout') {
