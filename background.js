@@ -1,32 +1,37 @@
-import {queryParams} from "./auth.js";
+import {queryParams, youtube_key} from "./auth.js";
 import {generateCodeVerifier, generateCodeChallengeFromVerifier} from "./auth.js"
 
 const getTab = async() => {
-    const queryOptions = {active: true, currentWindow: true};
+    const queryOptions = {active: true, 
+                          currentWindow: true};
     const tabs = await chrome.tabs.query(queryOptions);
     return tabs[0];
 }
 
-const getCurrentTabURL = () => {
+const getCurrentTabInfo = () => {
     let currentTabUrl = '';
+    let videoId = '';
     
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         //preventing multiple fires on youtube.com
        if(tab.status ==="complete" && tab.url!=currentTabUrl){
         currentTabUrl = tab.url;
-        console.log(`current url is:${currentTabUrl}`)
-        return;
+           if(currentTabUrl.startsWith('https://www.youtube.com/watch?v=')){
+                videoId = currentTabUrl.substring(currentTabUrl.indexOf('=') +1)
+                console.log(`video id is ${videoId}`);
+            }
        }
     }) 
     chrome.tabs.onActivated.addListener(async () => {
         const tab = await getTab()
         currentTabUrl = tab.url;
-        console.log(`current url is:${currentTabUrl}`)
-        return;
+            if(currentTabUrl.startsWith('https://www.youtube.com/watch?v=')){
+                videoId = currentTabUrl.substring(currentTabUrl.indexOf('=') +1)
+                console.log(`video id is ${videoId}`);
+        }
     })   
+    return {currentTabUrl, videoId}
 }
-
-getCurrentTabURL();
 
 let userSignedIn = '';
 
@@ -109,14 +114,17 @@ const authorize = async({sendResponse}) => {
                 console.log(Token) 
                 console.log(Token.access_token)
                 const testId = '11dFghVXANMlKmJXsNCbNl'
+                const testVideoId = 'cvChjHcABPA'
                     getTrack(testId, Token.access_token)
+                    getVideoSnippet(testVideoId);
                     //searchTrackFirstTrack("Cut To The Feeling", Token.access_token)
     })
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if(request.message === 'login') {
-        authorize({sendResponse})   
+        getCurrentTabInfo();   
+        authorize({sendResponse})
         return true;  
     }
     else if (request.message === 'logout') {
@@ -198,4 +206,18 @@ const searchTrackFirstTrack = async(trackName, accessToken) => {
     const firstTrack = response.tracks.items[0];
     console.log(firstTrack)
     return firstTrack; 
+}
+
+const getVideoSnippet = async(videoId) => {
+    const url = `https://youtube.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${youtube_key}`
+    const requestSnippet = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        json: true
+    })
+    const response = await requestSnippet.json();
+    const videoSnippet = response.items[0].snippet
+    console.log(videoSnippet);
 }
