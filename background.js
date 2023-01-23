@@ -1,35 +1,51 @@
 import {queryParams, youtube_key} from "./auth.js";
 import {generateCodeVerifier, generateCodeChallengeFromVerifier} from "./auth.js"
 
+const testId = '11dFghVXANMlKmJXsNCbNl'
+const testVideoId = 'cvChjHcABPA' 
+
 const getTab = async() => {
     const queryOptions = {active: true, 
-                          currentWindow: true};
-    const tabs = await chrome.tabs.query(queryOptions);
-    return tabs[0];
-}
-
-const getCurrentTabInfo = () => {
+        currentWindow: true};
+        const tabs = await chrome.tabs.query(queryOptions);
+        return tabs[0];
+    }
+    
+const setCurrentTabInfo = () => {
     let currentTabUrl = '';
     let videoId = '';
-    
+        
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         //preventing multiple fires on youtube.com
        if(tab.status ==="complete" && tab.url!=currentTabUrl){
         currentTabUrl = tab.url;
+        console.log(currentTabUrl)
            if(currentTabUrl.startsWith('https://www.youtube.com/watch?v=')){
                 videoId = currentTabUrl.substring(currentTabUrl.indexOf('=') +1)
                 console.log(`video id is ${videoId}`);
+                chrome.storage.local.set({"videoId": videoId})
+                chrome.storage.local.get("videoId", function(results){
+                    console.log(results)
+                })
             }
        }
     }) 
     chrome.tabs.onActivated.addListener(async () => {
         const tab = await getTab()
         currentTabUrl = tab.url;
+        console.log(currentTabUrl)
             if(currentTabUrl.startsWith('https://www.youtube.com/watch?v=')){
                 videoId = currentTabUrl.substring(currentTabUrl.indexOf('=') +1)
                 console.log(`video id is ${videoId}`);
+                chrome.storage.local.set({"videoId": videoId})
+                chrome.storage.local.get("videoId", function(results){
+                    console.log(results)
+                })
         }
-    })   
+    })  
+
+    // if currentTabURL === youtube.com/watch inject css with button
+
     return {currentTabUrl, videoId}
 }
 
@@ -99,33 +115,32 @@ const getAccessToken = async(authCode, codeVerifier) => {
     return response;    
 }
 
-const authorize = async({sendResponse}) => {
+const authorize = (endpoint) => {
+    return new Promise((resolve, reject) => {
+        chrome.identity.launchWebAuthFlow({
+            url: endpoint,
+            interactive: true 
+        }, (redirect_url) => resolve(redirect_url)) 
+        //reject  
+    })
+}
+
+const handleAsync = async(request, sender, {sendResponse}) => {
     const authorizeData = await createAuthorizeEndpoint();
         const endpoint = authorizeData.endpoint;
         const codeVerifier = authorizeData.codeVerifier;
     
-    chrome.identity.launchWebAuthFlow({
-        url: endpoint,
-        interactive: true 
-        }, async (redirect_url) => {
-           const code = getAuthCode(redirect_url, {sendResponse});
-
-                const Token = Object.assign({ }, await getAccessToken(code, codeVerifier))
-                console.log(Token) 
-                console.log(Token.access_token)
-                const testId = '11dFghVXANMlKmJXsNCbNl'
-                const testVideoId = 'cvChjHcABPA'
-                    getTrack(testId, Token.access_token)
-                    getVideoSnippet(testVideoId);
-                    //searchTrackFirstTrack("Cut To The Feeling", Token.access_token)
-    })
+    const redirect = await authorize(endpoint)
+    const code = getAuthCode(redirect, {sendResponse})
+    const Token = Object.assign({ }, await getAccessToken(code, codeVerifier))
+    console.log(Token)
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    setCurrentTabInfo()
+    
     if(request.message === 'login') {
-        getCurrentTabInfo();   
-        authorize({sendResponse})
-        return true;  
+        handleAsync(request, sender, {sendResponse})
     }
     else if (request.message === 'logout') {
         (async() => {
@@ -133,6 +148,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             chrome.action.setPopup({ popup: './popup/views/sign-in.html' }, () => {
                 sendResponse({message: 'success' });
             })
+            chrome.storage.local.clear();
         })();
         return true;
     }
@@ -188,6 +204,7 @@ const saveTrack = async (id, accessToken) => {
           json: true
       })
       const response = saveTrackRequest;
+      //if response is 200 ...
       console.log(response) 
 }
 
