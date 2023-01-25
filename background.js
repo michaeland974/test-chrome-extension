@@ -8,45 +8,35 @@ const getTab = async() => {
     const queryOptions = {active: true, 
         currentWindow: true};
         const tabs = await chrome.tabs.query(queryOptions);
-        return tabs[0];
-    }
-    
-const setCurrentTabInfo = () => {
-    let currentTabUrl = '';
-    let videoId = '';
         
+        return tabs[0];
+}
+
+const injectScripts = async(tab) => {
+    const url = tab.url;
+    if(url.startsWith('https://www.youtube.com/watch?v=')){
+        chrome.scripting.executeScript({
+            target: {tabId: tab.id},
+            files: ['./foreground.js']
+        });
+        
+        const videoId = url.substring(url.indexOf('=') +1)
+        chrome.storage.local.set({"videoId": videoId})
+    }
+}
+    
+const setCurrentTabInfoNew = async() => {
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        //preventing multiple fires on youtube.com
-       if(tab.status ==="complete" && tab.url!=currentTabUrl){
-        currentTabUrl = tab.url;
-        console.log(currentTabUrl)
-           if(currentTabUrl.startsWith('https://www.youtube.com/watch?v=')){
-                videoId = currentTabUrl.substring(currentTabUrl.indexOf('=') +1)
-                console.log(`video id is ${videoId}`);
-                chrome.storage.local.set({"videoId": videoId})
-                chrome.storage.local.get("videoId", function(results){
-                    console.log(results)
-                })
-            }
-       }
-    }) 
+       if(userSignedIn){
+            injectScripts(tab)
+        }
+    })
     chrome.tabs.onActivated.addListener(async () => {
-        const tab = await getTab()
-        currentTabUrl = tab.url;
-        console.log(currentTabUrl)
-            if(currentTabUrl.startsWith('https://www.youtube.com/watch?v=')){
-                videoId = currentTabUrl.substring(currentTabUrl.indexOf('=') +1)
-                console.log(`video id is ${videoId}`);
-                chrome.storage.local.set({"videoId": videoId})
-                chrome.storage.local.get("videoId", function(results){
-                    console.log(results)
-                })
+        const tab = await getTab();
+        if(userSignedIn){
+            injectScripts(tab);
         }
     })  
-
-    // if currentTabURL === youtube.com/watch inject css with button
-
-    return {currentTabUrl, videoId}
 }
 
 let userSignedIn = '';
@@ -134,13 +124,20 @@ const handleAsync = async(request, sender, {sendResponse}) => {
     const code = getAuthCode(redirect, {sendResponse})
     const Token = Object.assign({ }, await getAccessToken(code, codeVerifier))
     console.log(Token)
+
+    //gets tab url and videoId if user logs in on youtube.com/watch*
+   const tab = await getTab();
+ //  injectScripts(tab);
+    //gets tab url and videoId while user navigates links and opens new tabs
+   setCurrentTabInfoNew();
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    setCurrentTabInfo()
+   // setCurrentTabInfo()
     
     if(request.message === 'login') {
         handleAsync(request, sender, {sendResponse})
+      //  setCurrentTabInfo();
     }
     else if (request.message === 'logout') {
         (async() => {

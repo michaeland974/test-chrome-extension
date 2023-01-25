@@ -19,6 +19,14 @@
         "activeTab",
         "scripting",
         "storage",
-        "identity"
+        "identity",
+        "webNavigation"
+    ],
+    "content_scripts": [
+        {
+          "matches": ["https://www.youtube.com/*"],
+          "js": ["foreground.js"]
+        }
     ]
+    
 }
