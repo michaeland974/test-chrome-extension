@@ -1,0 +1,25 @@
+#spotify-button{
+    background-color: black;
+    border: none;
+    border-radius: 25px;
+    
+    margin-left: 1.5rem; 
+    padding: 2rem;
+    width: 2rem;
+    height: 3rem;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    cursor: pointer;
+}
+
+#spotify-button:hover{
+    background-color: hsl(0,0%,20%,1)
+}
+
+#spotify-logo{
+    min-height: 21px; /* Spotify Design Guidelines */
+    max-height: 90%;
+}

@@ -11,6 +11,11 @@
     "action": {
         "default_popup": "./popup/views/sign-in.html"
     },
+    "icons": {
+        "16": "./images/icons/Spotify_Icon_RGB_Green.png",
+        "48": "./images/icons/Spotify_Icon_RGB_Green.png",
+        "128": "./images/icons/Spotify_Icon_RGB_Green.png"
+    },
     "host_permissions": [
         "https://www.youtube.com/*"
     ],
@@ -25,8 +30,13 @@
     "content_scripts": [
         {
           "matches": ["https://www.youtube.com/*"],
-          "js": ["foreground.js"]
+          "js": ["foreground.js"],
+          "css": ["./styles/content_styles.css"]
         }
-    ]
+    ],
+    "web_accessible_resources": [{
+        "resources": ["images/icons/Spotify_Icon_RGB_Green.png"],
+        "matches": ["https://www.youtube.com/*"]
+      }]
     
 }

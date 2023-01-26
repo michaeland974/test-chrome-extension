@@ -12,29 +12,36 @@ const getTab = async() => {
         return tabs[0];
 }
 
-const injectScripts = async(tab) => {
+const injectScripts = (tab) => {
     const url = tab.url;
     if(url.startsWith('https://www.youtube.com/watch?v=')){
         chrome.scripting.executeScript({
             target: {tabId: tab.id},
             files: ['./foreground.js']
         });
-        
+    }
+}
+
+const setVideoId = (tab) => {
+    const url = tab.url;
+    if(url.startsWith('https://www.youtube.com/watch?v=')){
         const videoId = url.substring(url.indexOf('=') +1)
         chrome.storage.local.set({"videoId": videoId})
     }
 }
     
-const setCurrentTabInfoNew = async() => {
+const setTabListeners = () => {
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
        if(userSignedIn){
             injectScripts(tab)
+            setVideoId(tab)
         }
     })
     chrome.tabs.onActivated.addListener(async () => {
         const tab = await getTab();
         if(userSignedIn){
-            injectScripts(tab);
+            injectScripts(tab)
+            setVideoId(tab)
         }
     })  
 }
@@ -115,7 +122,7 @@ const authorize = (endpoint) => {
     })
 }
 
-const handleAsync = async(request, sender, {sendResponse}) => {
+const handleAsyncLogin = async(request, sender, {sendResponse}) => {
     const authorizeData = await createAuthorizeEndpoint();
         const endpoint = authorizeData.endpoint;
         const codeVerifier = authorizeData.codeVerifier;
@@ -123,22 +130,26 @@ const handleAsync = async(request, sender, {sendResponse}) => {
     const redirect = await authorize(endpoint)
     const code = getAuthCode(redirect, {sendResponse})
     const Token = Object.assign({ }, await getAccessToken(code, codeVerifier))
+    chrome.storage.session.set({'token': Token})
     console.log(Token)
 
-    //gets tab url and videoId if user logs in on youtube.com/watch*
+    //injected script if user logs in on youtube.com/watch*
    const tab = await getTab();
- //  injectScripts(tab);
-    //gets tab url and videoId while user navigates links and opens new tabs
-   setCurrentTabInfoNew();
+   injectScripts(tab);
+   setVideoId(tab);
+   
+    //injected script when user navigates/tabs to youtube.com/watch*
+   setTabListeners();
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-   // setCurrentTabInfo()
-    
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {    
     if(request.message === 'login') {
-        handleAsync(request, sender, {sendResponse})
-      //  setCurrentTabInfo();
+        handleAsyncLogin(request, sender, {sendResponse})
+       
+        //keeps message channel open
+    return true;
     }
+
     else if (request.message === 'logout') {
         (async() => {
             userSignedIn = false;
@@ -147,9 +158,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })
             chrome.storage.local.clear();
         })();
-        return true;
+    return true;
+    }
+
+    else if(request.message === 'add_song'){
+        //if categoryId is #10 music sendResponse 'success'
+            //song added!
+            //else
+                //sendResponse 'fail', 'Video not listed as music'
+        sendResponse({message: 'success'});
+       /*  chrome.storage.local.get("videoId", (result) => {
+            console.log(result)
+        }) */
+        handleAsyncAddSong();
+    return true;
     }
 });
+
+const handleAsyncAddSong = async() => {
+    const storageResponse = await chrome.storage.local.get("videoId");
+    const videoId = storageResponse.videoId;
+
+    const videoSnippet = await getVideoSnippet(videoId)
+    const isMusicCategory = videoSnippet.categoryId === "10";
+    const videoTitle = videoSnippet.title;
+
+    // if song video title contains "Official Video" remove that from string
+    
+    const tokenResponse = await chrome.storage.session.get("token")
+    const accessToken = tokenResponse.token.access_token;
+
+    if(isMusicCategory === true){
+        const searchTrackResponse = await searchTrackFirstTrack(videoTitle, accessToken);
+        const trackId = searchTrackResponse.id;
+        const saveTrackResponse = saveTrack(trackId, accessToken)
+        
+        if(saveTrackResponse.status === 200){
+            //nice
+            console.log("Track Saved")
+        }
+    }    
+    //else
+        //send Respones "fail"
+        //text bubble ""
+    
+}
 
 const getTrack = async (id, accessToken) => {
     const requestTrack = await fetch(`https://api.spotify.com/v1/tracks/${id}`,{
@@ -202,7 +255,7 @@ const saveTrack = async (id, accessToken) => {
       })
       const response = saveTrackRequest;
       //if response is 200 ...
-      console.log(response) 
+      return response 
 }
 
 const searchTrackFirstTrack = async(trackName, accessToken) => {
@@ -218,7 +271,6 @@ const searchTrackFirstTrack = async(trackName, accessToken) => {
     })
     const response = await search_track.json();
     const firstTrack = response.tracks.items[0];
-    console.log(firstTrack)
     return firstTrack; 
 }
 
@@ -233,5 +285,6 @@ const getVideoSnippet = async(videoId) => {
     })
     const response = await requestSnippet.json();
     const videoSnippet = response.items[0].snippet
-    console.log(videoSnippet);
+   // console.log(videoSnippet)
+    return videoSnippet;
 }
