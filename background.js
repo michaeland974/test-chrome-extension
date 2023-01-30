@@ -69,7 +69,9 @@ const createAuthorizeEndpoint = async() => {
 const getAuthCode = (redirect, {sendResponse}) => {
     let auth_code = '';
     if (chrome.runtime.lastError || redirect.includes('callback?error=access_denied')) {
-       sendResponse({ message: 'fail' });
+     // if (chrome.runtime.lastError ) {
+         console.log({error})
+         sendResponse({ message: 'fail' });
     } 
     else {
         const state = redirect.substring(redirect.indexOf('state=') + 6);
@@ -118,13 +120,13 @@ const authorize = (endpoint) => {
             url: endpoint,
             interactive: true 
         }, (redirect_url) => resolve(redirect_url)) 
-        //reject  
     })
 }
 
-const handleAsyncLogin = async(request, sender, {sendResponse}) => {
+const handleAsyncLogin = async({sendResponse}) => {
     const authorizeData = await createAuthorizeEndpoint();
         const endpoint = authorizeData.endpoint;
+        console.log(endpoint)
         const codeVerifier = authorizeData.codeVerifier;
     
     const redirect = await authorize(endpoint)
@@ -144,7 +146,7 @@ const handleAsyncLogin = async(request, sender, {sendResponse}) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {    
     if(request.message === 'login') {
-        handleAsyncLogin(request, sender, {sendResponse})
+        handleAsyncLogin({sendResponse})
        
         //keeps message channel open
     return true;
@@ -183,6 +185,7 @@ const trimVideoTitle = (title) => {
         })
     return (newTitle === '') ? title : newTitle;
 }
+
 
 const handleAsyncAddSong = async() => {
     const storageResponse = await chrome.storage.local.get("videoId");
