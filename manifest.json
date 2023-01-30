@@ -31,7 +31,7 @@
         {
           "matches": ["https://www.youtube.com/*"],
           "js": ["foreground.js"],
-          "css": ["./styles/content_styles.css"]
+          "css": ["./css/styles.css"]
         }
     ],
     "web_accessible_resources": [{

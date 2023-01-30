@@ -6,7 +6,7 @@ const testVideoId = 'cvChjHcABPA'
 
 const getTab = async() => {
     const queryOptions = {active: true, 
-        currentWindow: true};
+                          currentWindow: true};
         const tabs = await chrome.tabs.query(queryOptions);
         
         return tabs[0];
@@ -129,8 +129,8 @@ const handleAsyncLogin = async(request, sender, {sendResponse}) => {
     
     const redirect = await authorize(endpoint)
     const code = getAuthCode(redirect, {sendResponse})
-    const Token = Object.assign({ }, await getAccessToken(code, codeVerifier))
-    chrome.storage.session.set({'token': Token})
+        const Token = Object.assign({ }, await getAccessToken(code, codeVerifier))
+        chrome.storage.session.set({'token': Token})
     console.log(Token)
 
     //injected script if user logs in on youtube.com/watch*
@@ -167,13 +167,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             //else
                 //sendResponse 'fail', 'Video not listed as music'
         sendResponse({message: 'success'});
-       /*  chrome.storage.local.get("videoId", (result) => {
-            console.log(result)
-        }) */
         handleAsyncAddSong();
     return true;
     }
 });
+
+
+const trimVideoTitle = (title) => {
+    const substrings = ["(Official Music Video)", "(Official Video)", "(Official Audio)"]
+    let newTitle = '';  
+        substrings.forEach((str) => {
+            if(title.includes(str)){
+                newTitle = title.replace(str, '')
+            }
+        })
+    return (newTitle === '') ? title : newTitle;
+}
 
 const handleAsyncAddSong = async() => {
     const storageResponse = await chrome.storage.local.get("videoId");
@@ -181,9 +190,7 @@ const handleAsyncAddSong = async() => {
 
     const videoSnippet = await getVideoSnippet(videoId)
     const isMusicCategory = videoSnippet.categoryId === "10";
-    const videoTitle = videoSnippet.title;
-
-    // if song video title contains "Official Video" remove that from string
+    const videoTitle = trimVideoTitle(videoSnippet.title)
     
     const tokenResponse = await chrome.storage.session.get("token")
     const accessToken = tokenResponse.token.access_token;
@@ -201,8 +208,8 @@ const handleAsyncAddSong = async() => {
     //else
         //send Respones "fail"
         //text bubble ""
-    
 }
+
 
 const getTrack = async (id, accessToken) => {
     const requestTrack = await fetch(`https://api.spotify.com/v1/tracks/${id}`,{
