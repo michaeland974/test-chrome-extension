@@ -7,9 +7,9 @@
         "service_worker": "/background.js",
         "type": "module"
     },
-    "options_page": "options.html", 
+    "options_page": "./views/options.html", 
     "action": {
-        "default_popup": "./popup/views/sign-in.html"
+        "default_popup": "./views/sign-in.html"
     },
     "icons": {
         "16": "./images/icons/Spotify_Icon_RGB_Green.png",
@@ -31,7 +31,7 @@
         {
           "matches": ["https://www.youtube.com/*"],
           "js": ["foreground.js"],
-          "css": ["./css/styles.css"]
+          "css": ["./styles/foreground.css"]
         }
     ],
     "web_accessible_resources": [{
