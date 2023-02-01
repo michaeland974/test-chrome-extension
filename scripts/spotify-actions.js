@@ -52,7 +52,7 @@ export const saveTrack = async (id, accessToken) => {
 
 export const searchTrackFirstTrack = async(trackName, accessToken) => {
     const url = `https://api.spotify.com/v1/search?q=track${trackName}&type=track&limit=10`
-    const search_track = await fetch(url,{
+    const searchTrack = await fetch(url,{
         method: 'GET',
         headers: {
             'Accept': 'application/json',
@@ -61,7 +61,7 @@ export const searchTrackFirstTrack = async(trackName, accessToken) => {
         },
         json: true
     })
-    const response = await search_track.json();
+    const response = await searchTrack.json();
     const firstTrack = response.tracks.items[0];
     return firstTrack; 
 }

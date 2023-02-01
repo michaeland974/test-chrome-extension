@@ -19,15 +19,10 @@ export const createAuthorizeEndpoint = async() => {
         return {endpoint, codeVerifier};
 }
 
-export const getAuthCode = (redirect, {sendResponse}) => {
+export const getAuthCodeFromLogin = (redirect, {sendResponse}) => {
     let code = '';
     let signedIn = null;
-    if (chrome.runtime.lastError || redirect.includes('callback?error=access_denied')) {
-     // if (chrome.runtime.lastError ) {
-         console.log({error})
-         sendResponse({ message: 'fail' });
-    } 
-    else {
+    try{
         const state = redirect.substring(redirect.indexOf('state=') + 6);
         const authString = redirect.substring(redirect.indexOf('code=') + 5);
               code = authString.substring(0, authString.indexOf('&'));
@@ -40,9 +35,11 @@ export const getAuthCode = (redirect, {sendResponse}) => {
         } 
         else {
             signedIn = false;
-            sendResponse({ message: 'fail' });
-            return;
+            sendResponse({ message: 'error' });
         }
+    }catch{ //user clicks "x" on spotify login
+        console.log("x")
+        sendResponse({message: 'exit'})
     }
     return {code, signedIn};
 }
@@ -74,5 +71,6 @@ export const authorize = (endpoint) => {
             url: endpoint,
             interactive: true 
         }, (redirect_url) => resolve(redirect_url)) 
+        //if redirect url includes callback access denied
     })
 }

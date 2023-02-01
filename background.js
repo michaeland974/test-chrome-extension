@@ -1,5 +1,5 @@
 import { youtubeKey } from "./scripts/query-params.js";
-import { createAuthorizeEndpoint, getAuthCode, getAccessToken, authorize } from "./scripts/spotify-login.js";
+import { createAuthorizeEndpoint, getAuthCodeFromLogin, getAccessToken, authorize} from "./scripts/spotify-login.js";
 import { searchTrackFirstTrack, saveTrack } from "./scripts/spotify-actions.js";
 
 const testId = '11dFghVXANMlKmJXsNCbNl'
@@ -78,7 +78,7 @@ const handleAsyncLogin = async({sendResponse}) => {
         const codeVerifier = authorizeData.codeVerifier;
     
     const redirect = await authorize(endpoint)
-    const {code: code, signedIn: signedIn} = getAuthCode(redirect, {sendResponse})
+    const {code: code, signedIn: signedIn} = getAuthCodeFromLogin(redirect, {sendResponse})
         
         userSignedIn = signedIn
         const Token = Object.assign({ }, await getAccessToken(code, codeVerifier))
@@ -129,13 +129,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     else if (request.message === 'logout') {
-        (async() => {
             userSignedIn = false;
             chrome.action.setPopup({ popup: './views/sign-in.html' }, () => {
                 sendResponse({message: 'success' });
             })
             chrome.storage.local.clear();
-        })();
     return true;
     }
 
