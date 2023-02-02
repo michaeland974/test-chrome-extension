@@ -1,6 +1,6 @@
-const signOutButton = document.querySelector('#sign-out')
+const logOutButton = document.querySelector('#log-out')
 
-signOutButton.addEventListener('click',() => {
+logOutButton.addEventListener('click',() => {
     console.log("1st click")
     chrome.runtime.sendMessage({message: "logout"}, (response) => {
         if(response.message === "success"){

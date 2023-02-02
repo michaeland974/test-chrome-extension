@@ -14,7 +14,6 @@ spotifyButton.addEventListener('click', () => {
         }
     })
 });
-
 //prevents multiple fires
 var hasButton = document.querySelector("#owner").querySelector("#spotify-button");
 

@@ -1,0 +1,53 @@
+body{
+    font-family: Helvetica, Arial, sans-serif;
+    background-color: white;
+    margin: 0;
+    width: 300px;
+    height: 250px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.logo-container{
+    padding: 10px 20px 10px 20px;
+    border-bottom: 1px solid lightgrey;
+    margin-top: 10px;
+    display: flex;
+}
+
+#logo{
+    width: 80%;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.button-container{
+    padding: 30px;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+}
+
+#status-message{
+    font-weight: bold;
+    align-self: center;
+}
+
+#log-in, 
+#log-out{
+    background-color: #1ed760;
+    font-size: 14px;
+    padding: 10px;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px;
+}
+
+#log-in:hover, #log-out:hover{ background-color: #1fdf64; }
+#log-in:focus, #log-out:focus{ background-color: #169c46 }
+
+

@@ -21,27 +21,27 @@ export const createAuthorizeEndpoint = async() => {
 
 export const getAuthCodeFromLogin = (redirect, {sendResponse}) => {
     let code = '';
-    let signedIn = null;
+    let loggedIn = null;
     try{
         const state = redirect.substring(redirect.indexOf('state=') + 6);
         const authString = redirect.substring(redirect.indexOf('code=') + 5);
               code = authString.substring(0, authString.indexOf('&'));
 
         if(state === queryParams.state){
-            signedIn = true;
-            chrome.action.setPopup({ popup: './views/sign-out.html' }, ()=>{
+            loggedIn = true;
+            chrome.action.setPopup({ popup: './views/log-out.html' }, ()=>{
                 sendResponse({ message: 'success' });
             })
         } 
         else {
-            signedIn = false;
+            loggedIn = false;
             sendResponse({ message: 'error' });
         }
     }catch{ //user clicks "x" on spotify login
         console.log("x")
         sendResponse({message: 'exit'})
     }
-    return {code, signedIn};
+    return {code, loggedIn};
 }
 
 export const getAccessToken = async(authCode, codeVerifier) => {

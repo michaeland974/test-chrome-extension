@@ -1,6 +1,6 @@
-const signInButton = document.querySelector('#sign-in');
+const logInButton = document.querySelector('#log-in');
 
-signInButton.addEventListener('click', () => {
+logInButton.addEventListener('click', () => {
     chrome.runtime.sendMessage({message: "login"}, (response) => {
         if(response.message === "success") {
             console.log("test yes")

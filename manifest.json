@@ -9,7 +9,7 @@
     },
     "options_page": "./views/options.html", 
     "action": {
-        "default_popup": "./views/sign-in.html"
+        "default_popup": "./views/log-in.html"
     },
     "icons": {
         "16": "./images/icons/Spotify_Icon_RGB_Green.png",
